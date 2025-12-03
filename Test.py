@@ -1,4 +1,5 @@
 
+
 import streamlit as st
 import pandas as pd
 
@@ -7,33 +8,31 @@ import pandas as pd
 # -------------------------------
 if "dealers" not in st.session_state:
     # Dados iniciais simulados com todos os campos
-    st.session_state.dealers = pd.DataFrame([
-        {
-            "Sold to (Short Name)": "Dealer A",
-            "Sold to (Sap Code)": "1001",
-            "Sold to (Flex Code)": "F001",
-            "City": "Campinas",
-            "State": "SP",
-            "SO Carrier": "Carrier X",
-            "Active": "Sim",
-            "CNPJ": "12.345.678/0001-99",
-            "Distance (KM)": 15,
-            "Lat": -22.90,
-            "Long": -47.06,
-            "Country": "Brasil",
-            "Region": "Sudeste",
-            "Product Agreement": "PA-01",
-            "Store Type": "Loja Física",
-            "TT-SO - ZPIS": "OK",
-            "TT-STD-ZPIR": "OK",
-            "TT EXP Air DHL": "OK",
-            "TT EXP Road DHL": "OK",
-            "Cut Off Picking ZPIS": "18:00",
-            "Cut Off Picking STD": "17:00",
-            "Cut Off Shipping STD": "20:00",
-            "Cut Off Shipping EXP": "22:00"
-        }
-    ])
+    st.session_state.dealers = pd.DataFrame([{
+        "Sold to (Short Name)": "Dealer A",
+        "Sold to (Sap Code)": "1001",
+        "Sold to (Flex Code)": "F001",
+        "City": "Campinas",
+        "State": "SP",
+        "SO Carrier": "Carrier X",
+        "Active": "Sim",
+        "CNPJ": "12.345.678/0001-99",
+        "Distance (KM)": 15,
+        "Lat": -22.90,
+        "Long": -47.06,
+        "Country": "Brasil",
+        "Region": "Sudeste",
+        "Product Agreement": "PA-01",
+        "Store Type": "Loja Física",
+        "TT-SO - ZPIS": "OK",
+        "TT-STD-ZPIR": "OK",
+        "TT EXP Air DHL": "OK",
+        "TT EXP Road DHL": "OK",
+        "Cut Off Picking ZPIS": "18:00",
+        "Cut Off Picking STD": "17:00",
+        "Cut Off Shipping STD": "20:00",
+        "Cut Off Shipping EXP": "22:00"
+    }])
 
 if "modo" not in st.session_state:
     st.session_state.modo = "listar"
@@ -64,24 +63,12 @@ st.title("Controle de Concessionários (Dealers)")
 aba = st.tabs(["Lista de Dealers", "Adicionar Dealer"])
 
 # -------------------------------
-# Aba 1: Lista de Dealers
+# Aba 1: Lista de Dealers (sem ações)
 # -------------------------------
 with aba[0]:
     st.subheader("Lista de Dealers")
-    st.dataframe(st.session_state.dealers, use_container_width=True)
-
-    # Botões de ação por linha
-    st.write("### Ações")
-    for i, row in st.session_state.dealers.iterrows():
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            if st.button(f"Editar {row['Sold to (Short Name)']}"):
-                st.session_state.modo = "editar"
-                st.session_state.dealer_edit = (i, row)
-        with col2:
-            if st.button(f"Apagar {row['Sold to (Short Name)']}"):
-                apagar_dealer(i)
-                st.success(f"Dealer {row['Sold to (Short Name)']} apagado!")
+    # Apenas exibe a tabela, sem botões de ação
+    st.dataframe(st.session_state.dealers, use_container_width=True, height=600)
 
 
 # -------------------------------
@@ -93,9 +80,9 @@ with aba[1]:
     # Lista de campos na ordem definida
     campos = [
         "Sold to (Short Name)", "Sold to (Sap Code)", "Sold to (Flex Code)", "City", "State",
-        "SO Carrier", "Active", "CNPJ", "Distance (KM)", "Lat", "Long", "Country", "Region",
-        "Product Agreement", "Store Type", "TT-SO - ZPIS", "TT-STD-ZPIR", "TT EXP Air DHL",
-        "TT EXP Road DHL", "Cut Off Picking ZPIS", "Cut Off Picking STD", "Cut Off Shipping STD",
+        "Carrier","Ship Via", "Active", "CNPJ", "Distance (KM)", "Lat", "Long", "Country", "Region",
+        "Product Agreement", "Store Type", "Stock order - ZPIS", "Machine Down - ZPIR", "Expresso DHL",
+        "Cut Off Picking ZPIS", "Cut Off Picking ZPIR", "Cut Off Shipping ZPIR",
         "Cut Off Shipping EXP"
     ]
 
@@ -154,3 +141,5 @@ if st.session_state.modo == "editar" and st.session_state.dealer_edit is not Non
     if st.sidebar.button("Cancelar"):
         reset_modo()
     
+# -------------------------------
+# Fim do código         
