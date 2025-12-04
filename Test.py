@@ -1,27 +1,23 @@
 
-
 import streamlit as st
 import pandas as pd
-import streamlit.components.v1 as components
 
+# -------------------------------
+# CONFIGURAÇÃO INICIAL DA PÁGINA
+# -------------------------------
+st.set_page_config(page_title="Cadastro de Dealers", layout="wide")
 
-
-
-# Título do dashboard
-st.title("Cadastro de Dealer")
-
-# CSS customizado
-custom_css = """
+# CSS customizado para melhorar aparência
+st.markdown("""
 <style>
     body {
         background-color: #f5f5f5;
         font-family: Arial, sans-serif;
     }
     .main-title {
-        color: #4CAF50;
+        color: #205B2F;
         font-size: 32px;
         font-weight: bold;
-        text-align: left;
         margin-bottom: 20px;
     }
     .stTabs [role="tablist"] {
@@ -38,13 +34,6 @@ custom_css = """
     .stTabs [role="tab"]:hover {
         background-color: #45a049;
     }
-    .custom-box {
-        background-color: #ffffff;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-        margin-top: 20px;
-    }
     .stButton>button {
         background-color: #4CAF50;
         color: white;
@@ -57,45 +46,21 @@ custom_css = """
         background-color: #45a049;
     }
 </style>
-"""
-st.markdown(custom_css, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-
-
-
-
-
+st.title("Cadastro de Dealers")
 
 # -------------------------------
-# Inicialização do estado da aplicação
+# INICIALIZAÇÃO DO ESTADO
 # -------------------------------
+# Mantemos os dados em memória usando st.session_state
 if "dealers" not in st.session_state:
-    # Dados iniciais simulados com todos os campos
-    st.session_state.dealers = pd.DataFrame([{
-        "Sold to (Short Name)": "Dealer A",
-        "Sold to (Sap Code)": "1001",
-        "Sold to (Flex Code)": "F001",
-        "City": "Campinas",
-        "State": "SP",
-        "SO Carrier": "Carrier X",
-        "Active": "Sim",
-        "CNPJ": "12.345.678/0001-99",
-        "Distance (KM)": 15,
-        "Lat": -22.90,
-        "Long": -47.06,
-        "Country": "Brasil",
-        "Region": "Sudeste",
-        "Product Agreement": "PA-01",
-        "Store Type": "Loja Física",
-        "TT-SO - ZPIS": "OK",
-        "TT-STD-ZPIR": "OK",
-        "TT EXP Air DHL": "OK",
-        "TT EXP Road DHL": "OK",
-        "Cut Off Picking ZPIS": "18:00",
-        "Cut Off Picking STD": "17:00",
-        "Cut Off Shipping STD": "20:00",
-        "Cut Off Shipping EXP": "22:00"
-    }])
+    st.session_state.dealers = pd.DataFrame(columns=[
+        "Nome", "SAP Code", "Flex Code", "Cidade", "Estado", "Carrier", "Ship Via",
+        "Ativo", "CNPJ", "Distância (KM)", "Lat", "Long", "País", "Região",
+        "Product Agreement", "Tipo Loja", "Stock Order", "Machine Down", "Expresso DHL",
+        "Cut Off Picking ZPIS", "Cut Off Picking ZPIR", "Cut Off Shipping ZPIR", "Cut Off Shipping EXP"
+    ])
 
 if "modo" not in st.session_state:
     st.session_state.modo = "listar"
@@ -103,106 +68,109 @@ if "dealer_edit" not in st.session_state:
     st.session_state.dealer_edit = None
 
 # -------------------------------
-# Funções auxiliares
+# FUNÇÕES AUXILIARES (futuro: substituir por queries SQL)
 # -------------------------------
 def reset_modo():
+    """Reseta o modo para listar e limpa dealer em edição."""
     st.session_state.modo = "listar"
     st.session_state.dealer_edit = None
 
 def adicionar_dealer(dados):
+    """Adiciona um novo dealer ao DataFrame."""
     st.session_state.dealers = pd.concat([st.session_state.dealers, pd.DataFrame([dados])], ignore_index=True)
 
 def editar_dealer(index, dados):
+    """Edita dealer existente pelo índice."""
     st.session_state.dealers.loc[index] = dados
 
 def apagar_dealer(index):
+    """Remove dealer pelo índice."""
     st.session_state.dealers = st.session_state.dealers.drop(index).reset_index(drop=True)
 
 # -------------------------------
-# Layout principal
+# INTERFACE PRINCIPAL
 # -------------------------------
-st.title("Controle de Concessionários (Dealers)")
-
 aba = st.tabs(["Lista de Dealers", "Adicionar Dealer"])
 
 # -------------------------------
-# Aba 1: Lista de Dealers (sem ações)
+# ABA 1: LISTA DE DEALERS
 # -------------------------------
 with aba[0]:
     st.subheader("Lista de Dealers")
-    # Apenas exibe a tabela, sem botões de ação
-    st.dataframe(st.session_state.dealers, use_container_width=True, height=600)
+    if st.session_state.dealers.empty:
+        st.info("Nenhum dealer cadastrado ainda.")
+    else:
+        # Exibe lista com botões Editar e Excluir
+        for i, row in st.session_state.dealers.iterrows():
+            col1, col2, col3 = st.columns([4, 1, 1])
+            col1.write(f"**{row['Nome']}** - {row['Cidade']}/{row['Estado']}")
+            if col2.button("Editar", key=f"edit_{i}"):
+                st.session_state.modo = "editar"
+                st.session_state.dealer_edit = (i, row)
+            if col3.button("Excluir", key=f"del_{i}"):
+                apagar_dealer(i)
+                st.warning(f"Dealer '{row['Nome']}' excluído.")
+                st.rerun()
 
+        # Exibe tabela completa
+        st.dataframe(st.session_state.dealers, use_container_width=True)
 
 # -------------------------------
-# Aba 2: Adicionar Dealer
+# ABA 2: ADICIONAR DEALER
 # -------------------------------
 with aba[1]:
     st.subheader("Adicionar Novo Dealer")
-
-    # Lista de campos na ordem definida
-    campos = [
-        "Sold to (Short Name)", "Sold to (Sap Code)", "Sold to (Flex Code)", "City", "State",
-        "Carrier","Ship Via", "Active", "CNPJ", "Distance (KM)", "Lat", "Long", "Country", "Region",
-        "Product Agreement", "Store Type", "Stock order - ZPIS", "Machine Down - ZPIR", "Expresso DHL",
-        "Cut Off Picking ZPIS", "Cut Off Picking ZPIR", "Cut Off Shipping ZPIR",
-        "Cut Off Shipping EXP"
-    ]
-
-    # Dicionário para armazenar os dados do novo dealer
+    campos = list(st.session_state.dealers.columns)
     novo_dealer = {}
 
-    # Loop para criar os inputs dinamicamente
+    # Inputs dinâmicos
     for campo in campos:
-        # Campos numéricos
-        if campo in ["Distance (KM)", "Lat", "Long"]:
+        if campo in ["Distância (KM)", "Lat", "Long"]:
             novo_dealer[campo] = st.number_input(campo, value=0.0)
-
-        # Campo Active com opções Sim/Não
-        elif campo == "Active":
+        elif campo == "Ativo":
             novo_dealer[campo] = st.selectbox(campo, ["Sim", "Não"])
-
-        # Campo Product Agreement com opções C&F e A&T
         elif campo == "Product Agreement":
             novo_dealer[campo] = st.selectbox(campo, ["C&F", "A&T"])
-
-        # Demais campos como texto
         else:
             novo_dealer[campo] = st.text_input(campo)
 
-    # Botão para salvar novo dealer
+    # Botão salvar
     if st.button("Salvar Novo Dealer"):
-        if novo_dealer["Sold to (Short Name)"]:
+        if novo_dealer["Nome"]:
             adicionar_dealer(novo_dealer)
-            st.success(f"Dealer '{novo_dealer['Sold to (Short Name)']}' adicionado com sucesso!")
+            st.success(f"Dealer '{novo_dealer['Nome']}' adicionado com sucesso!")
+            st.rerun()
         else:
             st.error("Preencha pelo menos o nome do Dealer.")
 
-
-
 # -------------------------------
-# Modo Editar (Sidebar)
+# SIDEBAR: EDITAR DEALER
 # -------------------------------
 if st.session_state.modo == "editar" and st.session_state.dealer_edit is not None:
     st.sidebar.subheader("Editar Dealer")
     index, dealer = st.session_state.dealer_edit
     editado = {}
+
     for campo in campos:
-        if campo in ["Distance (KM)", "Lat", "Long"]:
-            editado[campo] = st.sidebar.number_input(campo, value=float(dealer[campo]))
-        elif campo == "Active":
-            editado[campo] = st.sidebar.selectbox(campo, ["Sim", "Não"], index=0 if dealer[campo] == "Sim" else 1)
-                
+        valor_atual = dealer[campo]
+        if campo in ["Distância (KM)", "Lat", "Long"]:
+            editado[campo] = st.sidebar.number_input(campo, value=float(valor_atual))
+        elif campo == "Ativo":
+            editado[campo] = st.sidebar.selectbox(campo, ["Sim", "Não"], index=0 if valor_atual == "Sim" else 1)
+        elif campo == "Product Agreement":
+            editado[campo] = st.sidebar.selectbox(campo, ["C&F", "A&T"], index=0 if valor_atual == "C&F" else 1)
         else:
-            editado[campo] = st.sidebar.text_input(campo, dealer[campo])
+            editado[campo] = st.sidebar.text_input(campo, value=str(valor_atual))
 
     if st.sidebar.button("Salvar Alterações"):
-        editar_dealer(index, editado)
-        st.sidebar.success("Dealer atualizado com sucesso!")
-        reset_modo()
+        if editado["Nome"]:
+            editar_dealer(index, editado)
+            st.sidebar.success(f"Dealer '{editado['Nome']}' atualizado com sucesso!")
+            reset_modo()
+            st.rerun()
+        else:
+            st.sidebar.error("O campo 'Nome' não pode ficar vazio.")
 
     if st.sidebar.button("Cancelar"):
         reset_modo()
-    
-# -------------------------------
-# Fim do código         
+        st.rerun()
